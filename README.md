@@ -1,5 +1,5 @@
 # CMiE-2017-Manuel-Coquet
-Final Project Power Flow Algorithms
+Final Project Power Flow and Optimal Power Flow Algorithms
 
 ## AC Power Flow analysis
 An alternating current power-flow model is a model used in electrical engineering to analyze power grids. It provides a nonlinear system which describes the energy flow through each transmission line. The goal of a power-flow study is to obtain complete voltages angle and magnitude information for each bus in a power system for specified load and generator real power and voltage conditions.  
@@ -18,3 +18,16 @@ Repeat the following lines 1-3 several times (say 100 times):
 - 4: Declare a success if the obtained solution matches the original random state V. Compute how many times each of the above two methods was successful for different values of voltage angles (sensitivity analysis).
 
 #### NOTE: The problem does not always have a solution, especially at large angles
+
+## AC Optimal Power Flow
+
+It is an expansion of power flow analysis in which power flow are optimized in order to minimize the cost of generation subject to the power flow constraints and other operational constraints, such as generator minimum output constraints, transmission stability and voltage constraints, and limits on switching mechanical equipment.
+
+Equality constraints
+- Power balance at each node - power flow equations
+
+Inequality constraints
+- Network operating limits (line flows, voltages)
+- Limits on control variables
+
+Solving an OPF is necessary to determing the optimal operation and planning of the grid. In this algorithm, I will simulate an optimal power flow model for a 6-bus system and determine the locational marginal prices (LMPs).
