@@ -30,4 +30,4 @@ Inequality constraints
 - Network operating limits (line flows, voltages)
 - Limits on control variables
 
-Solving an OPF is necessary to determing the optimal operation and planning of the grid. In this algorithm, I will simulate an optimal power flow model for a 6-bus system and determine the locational marginal prices (LMPs).
+Solving an OPF is necessary to determine the optimal operation and planning of the grid. In this algorithm, I will simulate an optimal power flow model for a 6-bus system and determine the locational marginal prices (LMPs).
