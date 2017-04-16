@@ -6,7 +6,7 @@ An alternating current power-flow model is a model used in electrical engineerin
 
 Once this information is known, real and reactive power flow on each branch as well as generator reactive power output can be analytically determined. Power-flow or load-flow studies are important for planning future expansion of power systems as well as in determining the best operation of existing systems.
 
-## Problem description
+## AC Power Flow Problem description
 - Consider a network with 5 buses that forms a cycle (i.e., the lines are (1,2), (2,3), (3,4),(4,5) and (5,1)).
 - Assume that Bus 1 is a slack, Bus 2 is PV (generator) and Buses 3-5 are PQ (loads).
 - Assume that the resistance and reactance of each line are both equal to 1.
