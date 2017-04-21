@@ -1,7 +1,14 @@
 # CMiE-2017-Manuel-Coquet
 Final Project Power Flow and Optimal Power Flow Algorithms
 
-## AC Power Flow analysis
+## AC PF and OPF algorithms & market power application
+- In this project, I start by building Power Flow model for a small network and comparing the computational efficiency of Newton's method and the optimizing package JuMP in Julia.
+
+- Afterwards, I expand the Power Flow model into an Optimal Power Flow to optimize the operation and planning of a power grid based on minimizing generation costs, and to determine Locational Marginal Prices that generators and load consumers face.
+
+- Finally, I use the Optimal Power Flow model to examine an example of Market Power and the incompatibility of incentives between profit-maximizing for a firm and optimizing the welfare of society.
+
+## 1. AC Power Flow analysis
 An alternating current power-flow model is a model used in electrical engineering to analyze power grids. It provides a nonlinear system which describes the energy flow through each transmission line. The goal of a power-flow study is to obtain complete voltages angle and magnitude information for each bus in a power system for specified load and generator real power and voltage conditions.  
 
 Once this information is known, real and reactive power flow on each branch as well as generator reactive power output can be analytically determined. Power-flow or load-flow studies are important for planning future expansion of power systems as well as in determining the best operation of existing systems.
@@ -19,8 +26,7 @@ Repeat the following lines 1-3 several times (say 100 times):
 
 #### NOTE: The problem does not always have a solution, especially at large angles
 
-## AC Optimal Power Flow
-
+## 2. AC Optimal Power Flow
 It is an expansion of power flow analysis in which power flow are optimized in order to minimize the cost of generation subject to the power flow constraints and other operational constraints, such as generator minimum output constraints, transmission stability and voltage constraints, and limits on switching mechanical equipment.
 
 Equality constraints
@@ -31,3 +37,13 @@ Inequality constraints
 - Limits on control variables
 
 Solving an OPF is necessary to determine the optimal operation and planning of the grid. In this algorithm, I will simulate an optimal power flow model for a 6-bus system and determine the locational marginal prices (LMPs).
+
+## 3. Market Power
+In this exercise, I will show that when a generator can exert market power (manipulate prices) due to cheaper generation costs -could also be due to size- , they will withhold capacity if not regulated and won't produce at society's optimal point. This will create Deadweight Loss (DWL) that will be paid by ratepayers, justifying regulating generators with market power and markets.
+
+#### The steps to show the impact of market power will be the following:
+- Determine the optimal social point by optimizing the power system without restrcitions (Determine optimal power flows, generator profit and systemwide costs)
+- Run power flow simulations withholding generation capacity from the generator with market power
+- Calculate the new optimal power flow, generator profit, systemwide costs and DWL
+- Determine the optimal operation point for the generator based on profit maximizing
+- Determine the associated DWL to society based on the generator profit-maximizing
