@@ -1,5 +1,5 @@
 # CMiE-2017-Manuel-Coquet
-Final Project Power Flow and Optimal Power Flow Algorithms
+Final Project Computational Methods in Economics
 
 ## Policy Appications of Power Systems Modelling
 
