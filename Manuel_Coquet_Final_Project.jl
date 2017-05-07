@@ -1,5 +1,5 @@
 
-using JuMP, Ipopt, Plots, DataFrames
+using JuMP, Ipopt, Plots, DataFrames, GLPKMathProgInterface, FileIO
 gr()
 
 # Since we are not changing resistance or reactance, the admittance matrix will always be constant
@@ -692,9 +692,9 @@ end
 gen_p = round(P_opt[3],2)
 optval = round(optval,2)
 
-println("The optimal production of the generator with market power is $gen_p")
+println("The optimal production of the generator with market power is $gen_p MW")
 println("The total cost of generation the $optval dollars/hr")
-println("The Deadweight loss is 0")
+println("The Deadweight loss is 0 dollars/hr")
 
 P_iter = 10:2:328
 
@@ -733,10 +733,11 @@ gen_opt_P = round(P_run[gen_opt_ind,3], 2)
 gen_opt_DWL = round(obj_run[gen_opt_ind]-optval,2);
 
 plot(P_run[:,3],rev_gen, label = "Revenue generator",xlims = (10, 340),ylims = (-1000,22000),
-    xticks = 30:30:330, yticks = 0:5000:25000, xlabel = "Generator Power (MW)", ylabel = "Value (dollars/hour)", 
-    w = 3, title = "Market Power of a Generator")
+    xticks = 30:30:330, yticks = 0:5000:25000, xlabel = "Generator Power Supplied (MW)", ylabel = "Value (dollars/hour)", 
+    w = 3, title = "Profit-maximizing for Generator with Market Power")
 plot!(P_run[:,3],costs_gen, label = "Costs generator", w = 3)
 plot!(P_run[:,3],profit_gen, label = "Profit generator", w = 3)
+scatter!([P_opt[3]],[profit_gen[end]],color=[:green],marker=([:d],6,0.8,stroke(3,:gray)), label = "Society Optimality")
 scatter!([gen_opt_P],[profit_gen[gen_opt_ind]],color=[:red],marker=([:d],6,0.8,stroke(3,:gray)), 
     label = "Profit-Maximizing point")
 scatter!([gen_opt_P+3], [10_500], series_annotations = ["P = $gen_opt_P MW"], markersize = 0, color = [:white]
@@ -744,13 +745,306 @@ scatter!([gen_opt_P+3], [10_500], series_annotations = ["P = $gen_opt_P MW"], ma
 
 default(legend=true)
 plot(P_run[:,3],obj_run-optval, label = "DWL to Society",xlims = (10, 360),ylims = (-1000,26000),
-    xticks = 30:30:330, yticks = 0:5000:25000, xlabel = "Generator Power (MW)", ylabel = "Value (dollars/hour)", 
-    w = 3, title = "Market Power of a Generator",fill=(0,:skyblue))
+    xticks = 30:30:330, yticks = 0:5000:25000, xlabel = "Generator Power Supplied (MW)", ylabel = "Value (dollars/hour)", 
+    w = 3, title = "Profit-maximizing for Generator with Market Power",fill=(0,:skyblue))
 plot!(P_run[:,3],rev_gen-costs_gen, label = "Profit generator", w = 3)
-scatter!([P_opt[3]],[0],color=[:green],marker=([:d],6,0.8,stroke(3,:gray)), label = "Society Optimal")
-scatter!([gen_opt_P],[gen_opt_DWL],color=[:red],marker=([:d],6,0.8,stroke(3,:gray)), label = "Generator Optimal")
+scatter!([P_opt[3]],[0],color=[:green],marker=([:d],6,0.8,stroke(3,:gray)), label = "Society Optimality")
+scatter!([gen_opt_P],[gen_opt_DWL],color=[:red],marker=([:d],6,0.8,stroke(3,:gray)), label = "Generator Optimality")
 vline!([gen_opt_P, P_opt[3]],color = [:purple], label = "Support")
 scatter!([gen_opt_P+3], [14_500], series_annotations = ["DWL = $gen_opt_DWL dollars/hr"], markersize = 0, color = [:white]
 , label = "Annotation")
+
+load("Garver.png")
+
+# Line data for Garver 6 bus example
+Line_ID = 1:15; 
+Corridor = ["1-2","1-3","1-4","1-5","1-6","2-3","2-4","2-5","2-6","3-4","3-5","3-6","4-5","4-6","5-6"]
+Resistance = [0.10,0.09,0.15,0.05,0.17,0.05,0.10,0.08,0.08,0.15,0.05,0.12,0.16,0.08,0.15]
+Reactance = [0.40,0.38,0.60,0.20,0.68,0.20,0.40,0.31,0.30,0.59,0.20,0.48,0.63,0.30,0.61]
+Line_cost = [40.,38,60,20,68,20,40,31,30,59,20,48,63,30,61]
+Capacity_MW = [100,100,80,100,70,100,100,100,100,82,100,100,75,100,78]
+
+Garver_line = DataFrame(Line_ID = Line_ID, Corridor = Corridor, Resistance = Resistance, 
+    Reactance = Reactance, Investment_Cost = round(Line_cost), Capacity_MW = Capacity_MW)
+
+# Existing Lines Garver
+Ex_ID = [1,3,4,6,7,11]
+Ex_lines = DataFrame(Line_ID = Line_ID[Ex_ID], Corridor = Corridor[Ex_ID], 
+    Resistance = Resistance[Ex_ID], Reactance = Reactance[Ex_ID], Capacity_MW = Capacity_MW[Ex_ID])
+
+# Bus data for Garver 6 bus example
+Bus_ID = 1:6; 
+PG_max = [150.,0,360,0,0,600]
+LMP_G = [10.,0,20,0,0,30]
+PD = [80,240,40,160,240,0]
+
+Garver_bus = DataFrame(Bus_ID = Bus_ID, PG_max_MW = PG_max, LMP_G = LMP_G, PD_MW = PD)
+
+# line data
+C1 = [1,1,1,1,1,2,2,2,2,3,3,3,4,4,5]
+C2 = [2,3,4,5,6,3,4,5,6,4,5,6,5,6,6]
+
+# resized line data vectors (45-long vectors)
+Line_ID_jump = 1:45
+Corridor_jump = [Corridor;Corridor;Corridor]
+lcost_jump = [Line_cost;Line_cost;Line_cost]
+Capacity_MW_jump = [Capacity_MW;Capacity_MW;Capacity_MW]
+C1_jump = [C1;C1;C1]
+C2_jump = [C2;C2;C2]
+
+# NPV factor for 20 years with 10% discount rate to make fixed and operating costs compareable
+df = 0.0
+for i = 1:20
+    df += 1/(1.1)^i
+end
+fy = 1/df
+
+# bus data
+generators = [1,3,6]
+loads = [2,4,5];
+
+# sets of bus and neighboring line IDs
+bus_1_c1 = Int64[]; bus_2_c1 = Int64[]; bus_3_c1 = Int64[]; bus_4_c1 = Int64[]; bus_5_c1 = Int64[]; bus_6_c1 = Int64[]
+bus_1_c2 = Int64[]; bus_2_c2 = Int64[]; bus_3_c2 = Int64[]; bus_4_c2 = Int64[]; bus_5_c2 = Int64[]; bus_6_c2 = Int64[]
+
+for i = 1:45
+    if C1_jump[i] == 1
+        bus_1_c1 = push!(bus_1_c1,i)
+    elseif C1_jump[i] == 2
+        bus_2_c1 = push!(bus_2_c1,i)
+    elseif C1_jump[i] == 3
+        bus_3_c1 = push!(bus_3_c1,i)
+    elseif C1_jump[i] == 4
+        bus_4_c1 = push!(bus_4_c1,i)       
+    elseif C1_jump[i] == 5
+        bus_5_c1 = push!(bus_5_c1,i)
+     elseif C1_jump[i] == 6
+        bus_6_c1 = push!(bus_6_c1,i)
+    end
+end   
+   
+for i = 1:45
+    if C2_jump[i] == 1
+        bus_1_c2 = push!(bus_1_c2,i)
+    elseif C2_jump[i] == 2
+        bus_2_c2 = push!(bus_2_c2,i)
+    elseif C2_jump[i] == 3
+        bus_3_c2 = push!(bus_3_c2,i)
+    elseif C2_jump[i] == 4
+        bus_4_c2 = push!(bus_4_c2,i)     
+    elseif C2_jump[i] == 5
+        bus_5_c2 = push!(bus_5_c2,i)
+     elseif C2_jump[i] == 6
+        bus_6_c2 = push!(bus_6_c2,i)
+    end
+end  
+
+# Set of lines going from bus s
+bus_mat_c1 = [bus_1_c1,bus_2_c1,bus_3_c1,bus_4_c1,bus_5_c1,bus_6_c1]
+
+# Set of lines going into bus s
+bus_mat_c2 = [bus_1_c2,bus_2_c2,bus_3_c2,bus_4_c2,bus_5_c2,bus_6_c2]
+
+# activate a mixed integer-linear solver
+
+function DC_no_loss()
+
+m = Model(solver = GLPKSolverMIP())
+
+@variable(m, w[1:45], Bin) # 45 variables because each line can be built up to 3 times
+@variable(m, pst[1:45]) # lineflow as variables
+
+# Set a constraint for exisiting lines
+@constraint(m, exconstr[i=1:6], w[Ex_ID[i]] == 1)
+
+# Calculate an expression for the power flows through each bus
+@expression(m, pf[i=1:6], sum(pst[j] for j in bus_mat_c1[i])-sum(pst[j] for j in bus_mat_c2[i]))
+
+# Calculate an expression for the power generated
+@expression(m, pg[i=1:6], PD[i]+pf[i])
+                    
+# Define the minimization objective
+@expression(m, gen_costs, sum(pg[i]*LMP_G[i] for i = 1:6))
+@expression(m, line_costs, sum(w[i]*lcost_jump[i] for i = 1:45))
+            
+@objective(m, Min, line_costs + gen_costs*(fy*8760/10^6)) 
+
+# Generator flow constraints
+@constraint(m, gen[i=1:6], 0 <= pg[i] <= PG_max[i])
+                                    
+# Line flow constraints
+@expression(m, min_flow[i=1:45], -w[i]*Capacity_MW_jump[i])
+@expression(m, max_flow[i=1:45], w[i]*Capacity_MW_jump[i]) 
+                                    
+@constraint(m, min_flow_cstr[i=1:45], pst[i] >= min_flow[i])
+@constraint(m, max_flow_cstr[i=1:45], pst[i] <= max_flow[i])
+                                    
+# Load constraints
+@constraint(m, load_balance[i = 1:6] , pg[i] - pf[i] == PD[i])
+                                    
+solve(m)
+
+W_jump_nl = getvalue(w)
+pst_jump_nl = getvalue(pst)
+pg_jump_nl = getvalue(pg)
+line_costs_jump_nl = getvalue(line_costs)
+                                            
+obj_nl = getobjectivevalue(m)  
+
+return W_jump_nl, pst_jump_nl, pg_jump_nl, line_costs_jump_nl, obj_nl
+                                                
+end                                  
+
+(W_jump_nl, pst_jump_nl, pg_jump_nl, line_costs_jump_nl, obj_nl) = DC_no_loss();
+
+nl_lines = find(W_jump_nl[1:end])
+nl_new_lines = setdiff(nl_lines,Ex_ID)
+n_lines_DC_wo_loss = size(nl_new_lines)[1]
+println("the number of new lines required is $n_lines_DC_wo_loss")
+
+time_nl = @elapsed DC_no_loss();
+@time DC_no_loss();
+
+Ex_lines = DataFrame(Line_ID = Line_ID_jump[nl_new_lines], Corridor = Corridor_jump[nl_new_lines], 
+    Capacity_MW = Capacity_MW_jump[nl_new_lines], Investment_Cost = lcost_jump[nl_new_lines])
+
+DataFrame(Line_ID = Line_ID_jump[nl_lines], Coridor = Corridor_jump[nl_lines], Line_flow_MW = pst_jump_nl[nl_lines])
+
+DataFrame(Bus_ID = Bus_ID, PG_MW = pg_jump_nl, LMP_G = LMP_G, PD_MW = PD)
+
+inv_nl = line_costs_jump_nl - sum(lcost_jump[Ex_ID])
+gen_nl = obj_nl-inv_nl
+println("The total investment cost of new lines is $inv_nl M dollars")
+
+# line data susceptance and conductance
+b = -Reactance./(Reactance.^2+Resistance.^2)
+g = Resistance./(Reactance.^2+Resistance.^2)
+
+# resized line data vectors (45-long vectors)
+b_jump = 100*[b;b;b]
+g_jump = 100*[g;g;g]
+
+# buses
+delta_lim = 20*π/180
+
+# other
+Mₛₜ = 10^3 # Positive constant needed for relaxation
+L = 4 # Number of blocks of the piecewise linearization of power losses
+
+αₛₜ = zeros(L); #Slope of the lth block of the voltage angle for the corridor (s,t)
+for i = 1:L
+    αₛₜ[i] = ((i*delta_lim)^2-(i*delta_lim-delta_lim)^2)/delta_lim
+end
+
+# activate mixed integer-linear solver
+function MILP()
+
+n = Model(solver = GLPKSolverMIP(msg_lev=GLPK.MSG_OFF))
+
+@variable(n, δₛ[1:6])
+@variable(n, δₛₜ⁺[1:45] >= 0) # support variable
+@variable(n, δₛₜ⁻[1:45] >= 0) # support variable
+@variable(n, δₗ[1:45,1:L] >= 0) # support variable
+@variable(n, w[1:45], Bin) # 45 variables because each line can be built up to 3 times
+@variable(n, fst[1:45])
+@variable(n, qst[1:45])
+@variable(n, pg[1:6])
+
+# Set a constraint for exisiting lines
+@constraint(n, exconstr[i=1:6], w[Ex_ID[i]] == 1)
+
+# Set constraint for reference bus
+@constraint(n, refbus, δₛ[1] == 1)
+
+# Calculate an expression for the power flows through each bus
+@expression(n, f[i=1:6],sum(fst[j]+qst[j] for j in bus_mat_c1[i])-sum(fst[j] for j in bus_mat_c2[i])) 
+
+# Load constraints
+@constraint(n, load_balance_loss[i = 1:6] , pg[i] - f[i] == PD[i])
+
+# Line flow constraints
+@expression(n, min_flow_loss[i=1:45], -w[i]*Capacity_MW_jump[i])
+@expression(n, max_flow_loss[i=1:45], w[i]*Capacity_MW_jump[i]) 
+                    
+@constraint(n, min_flow_cstr_loss[i=1:45], fst[i] >= min_flow_loss[i])
+@constraint(n, max_flow_cstr_loss[i=1:45], fst[i] <= max_flow_loss[i])
+
+# Elimination of non-linearity constraints
+@constraint(n, min_non_l[i=1:45], fst[i]/b_jump[i]+(δₛₜ⁺[i]-δₛₜ⁻[i]) >= -(1-w[i])*Mₛₜ)
+@constraint(n, max_non_l[i=1:45], fst[i]/b_jump[i]+(δₛₜ⁺[i]-δₛₜ⁻[i]) <= (1-w[i])*Mₛₜ)
+
+# Line loss constraints
+@constraint(n, min_loss[i=1:45], qst[i] >= 0)
+@constraint(n, max_loss[i=1:45], qst[i] <= w[i]*Capacity_MW_jump[i])
+ 
+# Linear loss constraints
+@expression(n, linear_loss[i=1:45], sum(αₛₜ[j]*δₗ[i,j] for j = 1:L))
+@constraint(n, min_loss_lin[i=1:45], -qst[i]/g_jump[i] + linear_loss[i] >=0)                    
+@constraint(n, max_loss_lin[i=1:45], -qst[i]/g_jump[i] + linear_loss[i] <= (1-w[i])*Mₛₜ^2)
+
+# Angle constraints
+@constraint(n, sum_angle[i=1:45], δₛₜ⁺[i]+δₛₜ⁻[i] == sum(δₗ[i,j] for j = 1:L))
+@constraint(n, diff_angle[i=1:45], δₛ[C1_jump[i]]-δₛ[C2_jump[i]] == δₛₜ⁺[i]-δₛₜ⁻[i])
+
+# Power balance constraints
+@constraint(n, pos_bal[i=1:45], fst[i] + 0.5*qst[i] <= w[i]*Capacity_MW_jump[i])
+@constraint(n, neg_bal[i=1:45],-fst[i] + 0.5*qst[i] <= w[i]*Capacity_MW_jump[i])
+                                
+# Generator flow constraints
+@constraint(n, gen[i=1:6], 0 <= pg[i] <= PG_max[i])
+                                
+# angle linearization constraint
+@constraint(n, angle_lin[i=1:45,j=1:L], δₗ[i,j] <= delta_lim + (1-w[i])*Mₛₜ)
+                                
+# Define the minimization objective
+@expression(n, gen_costs_loss, sum(pg[i]*LMP_G[i] for i = 1:6))
+@expression(n, line_costs_loss, sum(w[i]*lcost_jump[i] for i = 1:45))
+            
+@objective(n, Min, line_costs_loss + gen_costs_loss*(fy*8760/10^6))
+                                    
+solve(n)
+
+W_jump_lp = getvalue(w)
+pg_jump_lp = getvalue(pg)
+qst_jump_lp = getvalue(qst)
+fst_jump_lp = getvalue(fst)
+line_costs_jump_lp = getvalue(line_costs_loss)
+                                                        
+obj_lp = getobjectivevalue(n)                                                                          
+ 
+return W_jump_lp, pg_jump_lp, qst_jump_lp, qst_jump_lp, fst_jump_lp, line_costs_jump_lp, obj_lp
+                                                                        
+end                                                                
+                                                              
+
+(W_jump_lp, pg_jump_lp, qst_jump_lp, qst_jump_lp, fst_jump_lp, line_costs_jump_lp, obj_lp) = MILP();
+
+lp_lines = find(W_jump_lp[1:end])
+lp_new_lines = setdiff(lp_lines,Ex_ID)
+n_lines_DC_w_loss = size(lp_new_lines)[1]
+println("the number of new lines required is $n_lines_DC_w_loss")
+
+time_lp = @elapsed MILP();
+@time MILP();
+
+Ex_lines = DataFrame(Line_ID = Line_ID_jump[lp_new_lines], Corridor = Corridor_jump[lp_new_lines], 
+    Capacity_MW = Capacity_MW_jump[lp_new_lines], Investment_Cost = lcost_jump[lp_new_lines])
+
+DataFrame(Line_ID = Line_ID_jump[lp_lines], Coridor = Corridor_jump[lp_lines], 
+    Line_flow_MW = round(fst_jump_lp[lp_lines],3), Losses_MW = round(qst_jump_lp[lp_lines],3))
+
+DataFrame(Bus_ID = Bus_ID, PG_MW = round(pg_jump_lp,1), LMP_G = LMP_G, PD_MW = PD)
+
+inv_lp = line_costs_jump_lp - sum(lcost_jump[Ex_ID])
+gen_lp = obj_lp-inv_lp
+println("The total investment cost of new lines is $inv_lp M dollars")
+
+Results = DataFrame(Model = ["DC w/o Loss","MILP w/ Loss"],Lines_built = [Corridor_jump[nl_new_lines],
+        Corridor_jump[lp_new_lines]],Investment_Musd = [inv_lp,inv_nl],Gen_costs_Musd = round([gen_lp,gen_nl],2),
+            Total_costs_Musd = round([obj_nl, obj_lp],2), Losses_MW = round([0, sum(qst_jump_lp)],2),
+                Time_seconds = [time_nl,time_lp])
+
+# Results from the paper
+load("Results_paper.png")
 
 
