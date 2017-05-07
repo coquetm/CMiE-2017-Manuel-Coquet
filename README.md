@@ -1,12 +1,15 @@
 # CMiE-2017-Manuel-Coquet
 Final Project Power Flow and Optimal Power Flow Algorithms
 
-## AC PF and OPF algorithms & market power application
+## Policy Appications of Power Systems Modelling
+
 - In this project, I start by building Power Flow model for a small network and comparing the computational efficiency of Newton's method and the optimizing package JuMP in Julia.
 
 - Afterwards, I expand the Power Flow model into an Optimal Power Flow to optimize the operation and planning of a power grid based on minimizing generation costs, and to determine Locational Marginal Prices that generators and load consumers face.
 
-- Finally, I use the Optimal Power Flow model to examine an example of Market Power and the incompatibility of incentives between profit-maximizing for a firm and optimizing the welfare of society.
+- In addition, I use the Optimal Power Flow model to examine an example of Market Power and the incompatibility of incentives between profit-maximizing for a firm and optimizing the welfare of society.
+
+- Finally, I replicate a Mixed Integer Linear (MILP) approach to solving the transmission expansion planning problem from the paper Transmission Expansion Planning: A Mixed-Integer LP Approach (2003) by Natalia Alguacil, Alexis L. Motto and Antonio J. Conejo.
 
 ## 1. AC Power Flow analysis
 An alternating current power-flow model is a model used in electrical engineering to analyze power grids. It provides a nonlinear system which describes the energy flow through each transmission line. The goal of a power-flow study is to obtain complete voltages angle and magnitude information for each bus in a power system for specified load and generator real power and voltage conditions.  
@@ -39,7 +42,9 @@ Inequality constraints
 Solving an OPF is necessary to determine the optimal operation and planning of the grid. In this algorithm, I will simulate an optimal power flow model for a 6-bus system and determine the locational marginal prices (LMPs).
 
 ## 3. Market Power
-In this exercise, I will show that when a generator can exert market power (manipulate prices) due to cheaper generation costs -could also be due to size- , they will withhold capacity if not regulated and won't produce at society's optimal point. This will create Deadweight Loss (DWL) that will be paid by ratepayers, justifying regulating generators with market power and markets.
+- In this exercise, I will show that when a generator can exert market power (manipulate prices) due to cheaper costs -could also be due to size-, they will seek to maximize profit and produce at levels suboptimal for society. 
+
+- When left unregulated, generators with market power will withhold capacity to maximize profit, causing them to produce away from society's optimal point. This will create Deadweight Loss (DWL) that will be paid by ratepayers, justifying regulating generators with market power in markets.
 
 #### The steps to show the impact of market power will be the following:
 - Determine the optimal social point by optimizing the power system without restrcitions (Determine optimal power flows, generator profit and systemwide costs)
@@ -47,3 +52,15 @@ In this exercise, I will show that when a generator can exert market power (mani
 - Calculate the new optimal power flow, generator profit, systemwide costs and DWL
 - Determine the optimal operation point for the generator based on profit maximizing
 - Determine the associated DWL to society based on the generator profit-maximizing
+
+## 4. Transmission expansion Planning (Mixed Integer Programming)
+The transmission planning process must identify and support development of transmission infrastructure that is sufficiently robust and can enable competition among wholesale capacity and energy suppliers in energy markets. However, it is a very complex mathematical problem. In this project, I replicate algorithms that try to tackle this problem through linearizations and relaxations.
+
+#### The TEP algorithms I will replicate come from the Paper:
+- Transmission Expansion Planning: A Mixed-Integer LP Approach (2003) by Natalia Alguacil, Alexis L. Motto and Antonio J. Conejo
+
+- This paper presents a mixed-integer LP approach to the solution of the long-term transmission expansion planning problem
+
+- In general, this problem is large-scale, mixed-integer, nonlinear, and nonconvex. The authors derive a mixed-integer linear formulation that considers losses and guarantees convergence to optimality using existing optimization software
+
+- The proposed model is applied to Garver’s 6-bus system, the IEEE Reliability Test System, and a realistic Brazilian system. However, I only apply the algorithm to Garver’s 6-bus system.
