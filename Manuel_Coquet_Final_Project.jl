@@ -1,4 +1,7 @@
 
+# GitHub Repository Link:
+# https://github.com/coquetm/CMiE-2017-Manuel-Coquet
+
 using JuMP, Ipopt, Plots, DataFrames, GLPKMathProgInterface, FileIO
 gr()
 
