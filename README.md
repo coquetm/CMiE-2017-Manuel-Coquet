@@ -42,7 +42,7 @@ Inequality constraints
 Solving an OPF is necessary to determine the optimal operation and planning of the grid. In this algorithm, I will simulate an optimal power flow model for a 6-bus system and determine the locational marginal prices (LMPs).
 
 ## 3. Market Power
-- In this exercise, I will show that when a generator can exert market power (manipulate prices) due to cheaper costs -could also be due to size-, they will seek to maximize profit and produce at levels suboptimal for society. 
+- In this exercise, I will show that when a generator can exert market power (manipulate prices)-large generator with cheaper generation costs-, they will seek to maximize profit and produce at levels suboptimal for society. 
 
 - When left unregulated, generators with market power will withhold capacity to maximize profit, causing them to produce away from society's optimal point. This will create Deadweight Loss (DWL) that will be paid by ratepayers, justifying regulating generators with market power in markets.
 
