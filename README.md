@@ -42,7 +42,7 @@ Final Project Computational Methods in Economics
 - Since the DC Algorithm does not guarantee AC Feasibility, I also built a relaxed AC Transmission Expansion Planning model based on the paper Transmission Expansion Planning Using an AC Model: Formulations and Possible Relaxations (2012) by Zhang et al. 
 
 
-- For the AC TEP algorithm, I ran the algorithm in KNITRO in Julia locally - for some reason there is a bug in Jupyter notebook -, but I pasted the code and results (code is also found in github repository).
+- For the AC TEP algorithm, I ran the algorithm in KNITRO in Julia locally - for some reason there is a bug in Jupyter notebook -, but I pasted the code and results (local code is also found in github repository).
 
 
 - AC algorithms do not guarantee global optimum since the problem is non convex. Nonetheless, I show that it is possible to find AC feasible local solutions using a multistart approach at 500 different initial points. The best local solution that I found requires twice as much investment as the DC solution.
