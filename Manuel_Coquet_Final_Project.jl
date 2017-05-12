@@ -1,7 +1,4 @@
 
-# GitHub Repository Link:
-# https://github.com/coquetm/CMiE-2017-Manuel-Coquet
-
 using JuMP, Ipopt, Plots, DataFrames, GLPKMathProgInterface, FileIO
 gr()
 
@@ -1049,5 +1046,85 @@ Results = DataFrame(Model = ["DC w/o Loss","MILP w/ Loss"],Lines_built = [Corrid
 
 # Results from the paper
 load("Results_paper.png")
+
+Bus_ID = 1:6
+PG_min = [0.,0,0,0,0,0]
+PG_max = [150.,0,360,0,0,600]
+QG_min = [-10.,0,-10,0,0,-10]
+QG_max = [65.,0,150,0,0,200]
+LMP_G = [10.,0,20,0,0,30]
+PD = [80,240,40,160,240,0]
+QD = [16, 48, 8, 32, 48,0]
+
+Garver_bus_ac = DataFrame(Bus_ID = Bus_ID, PD_MW = PD, QD_MVAr = QD, PG_min = PG_min, PG_max = PG_max,
+    QG_min = QG_min, QG_max = QG_max, LMP_G = LMP_G)
+
+using KNITRO
+
+n = Model(solver=KnitroSolver(ms_enable = 1,ms_maxsolves = 500))
+
+# All buses starting at bus 1
+vlow = 0.95
+vhigh = 1.05
+
+@variable(n, 0 <= w[1:45] <= 1) # 45 variables because each line can be built up to 3 times
+@variable(n, -delta_lim <= δ[1:6] <= delta_lim)
+@variable(n, vlow <= v[1:6] <= vhigh)
+
+@NLexpression(n, pst[i=1:45], w[i]*(v[C1_jump[i]]^2*g_jump[i]-v[C1_jump[i]]*v[C2_jump[i]]*(g_jump[i]*
+            cos(δ[C1_jump[i]]-δ[C2_jump[i]])+b_jump[i]*sin(δ[C1_jump[i]]-δ[C2_jump[i]]))))
+
+@NLexpression(n, qst[i=1:45], w[i]*(-v[C1_jump[i]]^2*b_jump[i]+v[C1_jump[i]]*v[C2_jump[i]]*(b_jump[i]*
+            cos(δ[C1_jump[i]]-δ[C2_jump[i]])-g_jump[i]*sin(δ[C1_jump[i]]-δ[C2_jump[i]]))))
+
+# Set a constraint for exisiting lines
+@constraint(n, exconstr[i=1:6], w[Ex_ID[i]] == 1)
+
+# Set constraint for reference bus
+@constraint(n, refbus, δ[1] == 0)
+
+# Calculate an expression for the power flows through each bus
+@NLexpression(n, pk[i=1:6],sum(pst[j] for j in bus_mat_c1[i])-sum(pst[j] for j in bus_mat_c2[i]))
+@NLexpression(n, qk[i=1:6],sum(qst[j] for j in bus_mat_c1[i])-sum(qst[j] for j in bus_mat_c2[i]))
+                                                                               
+@NLconstraint(n, load_balance_ac[i in loads] , pk[i]  == -PD[i])
+@NLconstraint(n, load_balance_re[i in loads] , qk[i]  == -QD[i])
+                                        
+@NLconstraint(n, gen_min_ac[i in generators] , pk[i] + PD[i] >= PG_min[i])
+@NLconstraint(n, gen_min_re[i in generators] , qk[i] + QD[i] >= QG_min[i])
+
+@NLconstraint(n, gen_max_ac[i in generators] , pk[i] + PD[i] <= PG_max[i])
+@NLconstraint(n, gen_max_re[i in generators] , qk[i] + QD[i] <= QG_max[i])                                        
+                                        
+@NLconstraint(n, max_flow_cstr_ac[i=1:45], pst[i]^2 + qst[i]^2 <= w[i]*Capacity_MW_jump[i]^2)
+ 
+@NLconstraint(n, relax[i=1:45],w[i]*(1-w[i]) <= 10^-9)                                        
+                                        
+# Define the minimization objective
+@NLexpression(n, gen_costs_ac, sum(pk[i]*LMP_G[i] for i in generators))
+@NLexpression(n, line_costs_ac, sum(w[i]*lcost_jump[i] for i = 1:45))
+@NLexpression(n, obj_ac, line_costs_ac + gen_costs_ac*(fy*8760/10^6))
+                                                    
+@NLobjective(n, Min, obj_ac)
+
+@NLexpression(n,pg[i=1:6],pk[i]+PD[i])
+                                                                
+solve(n)
+
+
+
+load("sample_output.png")
+
+load("results_knitro.png")
+
+load("lines_knitro.png")
+
+load("line_flows_knitro.png")
+
+line_ID_ac = [21,22,24,28,29,30,41,44]; gen_costs_ac = 15.09; line_costs_ac = sum(lcost_jump[line_ID_ac]);
+total_costs_ac = gen_costs_ac + line_costs_ac;
+
+Summary = DataFrame(Model = "AC Power Flow NLP", Investment_Musd = line_costs_ac, Gen_costs_Musd = gen_costs_ac,
+    Total_costs_Musd = total_costs_ac)
 
 
